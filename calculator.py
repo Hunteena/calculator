@@ -2,6 +2,7 @@ from typing import Union
 
 from operations import add, sub, mul, div, mod, power, sqrt, solve
 
+
 # TODO Необходимо сохранять историю (ввод/вывод)
 # TODO Копирование в буфер обмена по клавишам ctrl+c результата вычислений
 
@@ -37,7 +38,7 @@ def main(task: list) -> Union[float, str]:
 
     func = {"+": add, "-": sub, "*": mul, "/": div, "%": mod, "^": power}.get(oper)
     if func:
-        return func[oper](a, b)
+        return func(a, b)
     else:
         return f"{oper} должно быть оператором"
 
