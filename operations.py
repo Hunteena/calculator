@@ -2,7 +2,6 @@ from typing import Union
 
 INT_PRECISION = 0.005
 FLOAT_PRECISION = 0.05
-PRECISION = 4
 ERROR_TEXT = {
     'zero_division': "Деление на ноль",
     'negative_sqrt': "Извлечение квадратного корня возможно только для неотрицательных чисел",
@@ -83,8 +82,6 @@ def mul(a: float, b: float) -> float:
     if a == 0 or b == 0:
         return 0
 
-    negative = a < 0 < b or a > 0 > b
-
     decimal_digits_a, int_a = _to_int(abs(a))
     decimal_digits_b, int_b = _to_int(abs(b))
 
@@ -94,6 +91,7 @@ def mul(a: float, b: float) -> float:
     if result_decimal_digits > 0:
         result = _point_shift(result, -result_decimal_digits)
 
+    negative = a < 0 < b or a > 0 > b
     if negative:
         return -result
     else:
@@ -118,6 +116,11 @@ def _div_mod(a: float, b: float) -> tuple[int, float]:
     return quotient, remainder
 
 
+def _exponent(a: float) -> int:
+    """Порядок числа"""
+    return int(f"{a:e}"[-3:])
+
+
 def div(a: float, b: float) -> Union[float, str]:
     """Деление"""
     if b == 0:
@@ -125,25 +128,19 @@ def div(a: float, b: float) -> Union[float, str]:
     elif a == 0:
         return 0
 
-    negative = a < 0 < b or a > 0 > b
-    # TODO переделать
-    precision = INT_PRECISION if a.is_integer() and b.is_integer() else FLOAT_PRECISION
-
-    integer, remainder = _div_mod(abs(a), abs(b))
-
-    if remainder == 0 or (remainder > 0 and mul(integer, precision) > 1):
-        result = integer
+    precision = _exponent(a) - _exponent(b)
+    if a.is_integer() and b.is_integer():
+        precision += _exponent(INT_PRECISION)
     else:
-        decimal, _ = _div_mod(_point_shift(remainder, PRECISION + 1), abs(b))
+        precision += _exponent(FLOAT_PRECISION)
 
-        decimal_srt = f"{decimal:0{PRECISION + 1}}"
-        if int(decimal_srt[-1]) >= 5:
-            decimal_srt = decimal_srt[:-2] + str(int(decimal_srt[-2]) + 1)
-        else:
-            decimal_srt = decimal_srt[:-1]
+    if precision >= 0:
+        result, _ = _div_mod(abs(a), abs(b))
+    else:
+        result, _ = _div_mod(_point_shift(abs(a), -precision), abs(b))
+        result = _point_shift(result, precision)
 
-        result = float(str(integer) + '.' + decimal_srt)
-
+    negative = a < 0 < b or a > 0 > b
     if negative:
         return -result
     else:
@@ -158,7 +155,9 @@ def mod(a: float, b: float) -> Union[float, str]:
         return 0
 
     _, result = _div_mod(abs(a), abs(b))
-    if a < 0 < b or a > 0 > b:
+
+    negative = a < 0 < b or a > 0 > b
+    if negative:
         result -= abs(b)
     if a < 0:
         result = -result

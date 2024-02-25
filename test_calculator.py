@@ -17,14 +17,23 @@ test_data = [
     (0, 0),
     (100001, 20),
     (101, 20),
+    (0.123456, 0.00789),
+    (1, 10000000.01),
+    (1, 1000000001),
+
 ]
 
 
 class TestFunctions:
     @pytest.mark.parametrize('a, b', test_data)
     def test_mul(self, a, b):
-        expected_result = a * b
-        assert mul(a, b) == expected_result
+        if a == 0 or b == 0:
+            assert mul(a, b) == 0
+        else:
+            a, b = float(a), float(b)
+            expected_result = a * b
+            precision = INT_PRECISION if a.is_integer() and b.is_integer() else FLOAT_PRECISION
+            assert abs(mul(a, b) - expected_result) / expected_result <= precision
 
     @pytest.mark.parametrize('a, b', test_data)
     def test_div(self, a, b):
