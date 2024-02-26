@@ -5,7 +5,8 @@ FLOAT_PRECISION = 0.05
 ERROR_TEXT = {
     'zero_division': "Деление на ноль",
     'negative_sqrt': "Извлечение квадратного корня возможно только для неотрицательных чисел",
-    'negative_power': "Возведение в степень возможно только для неотрицательных чисел",
+    'negative_power_of_zero': "Возведение в степень возможно только для ненулевого основания",
+    'not_integer_power': "Возведение в степень возможно только для целых показателей степени",
 }
 
 
@@ -48,8 +49,12 @@ def _to_int(a: float) -> tuple[int, int]:
     Возвращает количество значащих знаков после десятичной точки и число без десятичной точки.
     Пример: _to_int(3.14150) => (4, 31415)
     """
-    integer, _, decimal = str(a).partition(".")
-    return len(decimal), int(integer + decimal)
+    number, _, exponent = str(a).partition("e")
+    if not exponent:
+        integer, _, decimal = str(a).partition(".")
+        return len(decimal), int(integer + decimal)
+    else:
+        return 0, int(float(a))
 
 
 def _point_shift(a: float, k: int) -> float:
@@ -72,7 +77,7 @@ def _point_shift(a: float, k: int) -> float:
         digits_list = list(integer)
         if abs(k) > len(integer):
             digits_list = ['0' for i in range(abs(k) - len(integer))] + digits_list
-        digits_list[len(digits_list)-abs(k):] = ['.'] + digits_list[len(digits_list)-abs(k):]
+        digits_list[len(digits_list) - abs(k):] = ['.'] + digits_list[len(digits_list) - abs(k):]
         integer = ''.join(digits_list)
     return float(integer + decimal)
 
@@ -141,6 +146,7 @@ def div(a: float, b: float) -> Union[float, str]:
         result = _point_shift(result, precision)
 
     negative = a < 0 < b or a > 0 > b
+    result = float(result)
     if negative:
         return -result
     else:
@@ -166,35 +172,49 @@ def mod(a: float, b: float) -> Union[float, str]:
 
 def power(a: float, b: float) -> Union[float, str]:
     """Возведение в целую степень"""
+    if not b.is_integer():
+        return ERROR_TEXT['not_integer_power']
+    elif a == 0 and b < 0:
+        return ERROR_TEXT['negative_power_of_zero']
+    elif b == 0:
+        return 1
+    elif a == 0:
+        return 0
+
+    if b < 0:
+        a, b = div(1.0, a), abs(b)
+    powers = dict()
+    product, count = a, 1
+    while count <= b:
+        powers[count] = product
+        product = mul(product, product)
+        count += count
+
+    result, rest = 1, b
+    for i in reversed(powers.keys()):
+        if rest >= i:
+            rest -= i
+            result = mul(result, powers[i])
+
     if a < 0:
-        return ERROR_TEXT['negative_power']
-    # TODO использовать только + и -
-    # TODO ограничение для слишком больших по модулю степеней?
-    return a ** b
+        return -result
+    else:
+        return result
 
 
 def sqrt(a: float) -> Union[float, str]:
     """Извлечение квадратного корня"""
     if a < 0:
         return ERROR_TEXT['negative_sqrt']
-    # TODO использовать только + и -
-    return a ** 0.5
+    x, y = a, 1.0
+    precision = INT_PRECISION if a.is_integer() else FLOAT_PRECISION
+    while x - y > precision:
+        x = div((x + y), 2.0)
+        y = div(a, x)
+    return x
 
 
 def solve(s: list) -> float:
     """Решение простого уравнения с одним неизвестным"""
     # TODO решение простых примеров
     return 0
-
-
-if __name__ == "__main__":
-    x, y = 834825.397, 452.3400
-    # print(_mul_pos_int(40347590, 5394570))
-    # print(_to_int(-0))
-    # print(mul(x, y))
-    # print(x * y)
-    # print(mod(x, y))
-    # print(x % y)
-    # print(_point_shift(3141, -4))
-    print(div(x, y))
-    print((x / y))
