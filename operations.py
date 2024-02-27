@@ -1,13 +1,10 @@
-from typing import Union
-
 INT_PRECISION = 0.005
 FLOAT_PRECISION = 0.05
-ERROR_TEXT = {
-    'zero_division': "Деление на ноль",
-    'negative_sqrt': "Извлечение квадратного корня возможно только для неотрицательных чисел",
-    'negative_power_of_zero': "Возведение в степень возможно только для ненулевого основания",
-    'not_integer_power': "Возведение в степень возможно только для целых показателей степени",
-}
+
+
+class InvalidInputError(Exception):
+    def __init__(self, message = "Невозможно вычислить, проверьте ввод данных"):
+        self.message = message
 
 
 def add(a: float, b: float) -> float:
@@ -126,10 +123,10 @@ def _exponent(a: float) -> int:
     return int(f"{a:e}"[-3:])
 
 
-def div(a: float, b: float) -> Union[float, str]:
+def div(a: float, b: float) -> float:
     """Деление"""
     if b == 0:
-        return ERROR_TEXT['zero_division']
+        raise InvalidInputError("Деление на ноль")
     elif a == 0:
         return 0
 
@@ -153,10 +150,10 @@ def div(a: float, b: float) -> Union[float, str]:
         return result
 
 
-def mod(a: float, b: float) -> Union[float, str]:
+def mod(a: float, b: float) -> float:
     """Остаток от деления"""
     if b == 0:
-        return ERROR_TEXT['zero_division']
+        raise InvalidInputError("Деление на ноль")
     elif a == 0:
         return 0
 
@@ -170,12 +167,12 @@ def mod(a: float, b: float) -> Union[float, str]:
     return result
 
 
-def power(a: float, b: float) -> Union[float, str]:
+def power(a: float, b: float) -> float:
     """Возведение в целую степень"""
     if not b.is_integer():
-        return ERROR_TEXT['not_integer_power']
+        raise InvalidInputError("Возведение в степень возможно только для целых показателей степени")
     elif a == 0 and b < 0:
-        return ERROR_TEXT['negative_power_of_zero']
+        raise InvalidInputError("Возведение в степень возможно только для ненулевого основания")
     elif b == 0:
         return 1
     elif a == 0:
@@ -202,10 +199,10 @@ def power(a: float, b: float) -> Union[float, str]:
         return result
 
 
-def sqrt(a: float) -> Union[float, str]:
+def sqrt(a: float) -> float:
     """Извлечение квадратного корня"""
     if a < 0:
-        return ERROR_TEXT['negative_sqrt']
+        raise InvalidInputError("Извлечение квадратного корня возможно только для неотрицательных чисел")
     x, y = a, 1.0
     precision = INT_PRECISION if a.is_integer() else FLOAT_PRECISION
     while x - y > precision:
@@ -214,7 +211,40 @@ def sqrt(a: float) -> Union[float, str]:
     return x
 
 
-def solve(s: list) -> float:
+def solve(*equation: str) -> tuple[str, float]:
     """Решение простого уравнения с одним неизвестным"""
-    # TODO решение простых примеров
-    return 0
+    a, oper, b, eq, c = equation
+    a_not_float, b_not_float = False, False
+    try:
+        a = float(a)
+    except ValueError:
+        a_not_float = True
+    try:
+        b = float(b)
+    except ValueError:
+        b_not_float = True
+    if not (a_not_float ^ b_not_float):
+        raise InvalidInputError(f"{a} и {b} должны быть переменной и числом")
+    try:
+        c = float(c)
+    except ValueError:
+        raise InvalidInputError(f"{c} должно быть числом")
+
+    if b_not_float and oper in ["+", "*"]:
+        a, b = b, a
+        a_not_float, b_not_float = True, False
+
+    if a_not_float:
+        if oper == '/' and b == 0:
+            raise InvalidInputError("Деление на ноль")
+        inverse_func = {"+": sub, "-": add, "*": div, "/": mul}.get(oper)
+        if inverse_func:
+            return a, inverse_func(c, b)
+        else:
+            raise InvalidInputError(f"{oper} должно быть оператором")
+    if b_not_float:
+        inverse_func = {"-": sub, "/": div}.get(oper)
+        if inverse_func:
+            return b, inverse_func(a, c)
+        else:
+            raise InvalidInputError(f"{oper} должно быть оператором")

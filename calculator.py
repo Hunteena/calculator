@@ -1,49 +1,51 @@
-from typing import Union
-
-from operations import add, sub, mul, div, mod, power, sqrt, solve
+from operations import add, sub, mul, div, mod, power, sqrt, solve, InvalidInputError
 
 
 # TODO Необходимо сохранять историю (ввод/вывод)
 # TODO Копирование в буфер обмена по клавишам ctrl+c результата вычислений
 
 
-def main(task: list) -> Union[float, str]:
+def main(*task: str) -> str:
     if len(task) == 1:
         try:
-            return float(task[0])
+            return str(float(task[0]))
         except ValueError:
-            return "Невозможно вычислить, проверьте ввод данных"
+            raise InvalidInputError
 
     try:
         a, oper, b, *c = task
     except ValueError:
-        return "Невозможно вычислить, проверьте ввод данных"
+        raise InvalidInputError
 
-    if "=" in c:
-        return solve(task)
+    if len(c) == 2 and c[0] == "=":
+        name, result = solve(a, oper, b, *c)
+        return f"{name} = {result}"
     elif c:
-        return "Невозможно вычислить, проверьте ввод данных"
-
-    if b == "1/2":
-        return sqrt(a)
+        raise InvalidInputError
 
     try:
         a = float(a)
     except ValueError:
-        return f"{a} должно быть числом"
+        raise InvalidInputError(f"{a} должно быть числом")
+
+    if b == "1/2":
+        return str(sqrt(a))
+
     try:
         b = float(b)
     except ValueError:
-        return f"{b} должно быть числом"
+        raise InvalidInputError(f"{b} должно быть числом")
 
     func = {"+": add, "-": sub, "*": mul, "/": div, "%": mod, "^": power}.get(oper)
     if func:
-        return func(a, b)
+        return str(func(a, b))
     else:
-        return f"{oper} должно быть оператором"
+        raise InvalidInputError(f"{oper} должно быть оператором")
 
 
 if __name__ == "__main__":
+    print("Введите пример или простое уравнение, разделяя числа и операторы пробелами.\n"
+          "Чтобы получить справку, введите 'help' или просто нажмите ввод.")
     while True:
         print("Введите пример:")
         input_data = input().strip()
@@ -64,4 +66,7 @@ if __name__ == "__main__":
                   "Для завершения работы введите 'exit'.\n"
                   "Чтобы получить эту справку, введите 'help' или просто нажмите ввод.")
         else:
-            print(main(input_data.split(" ")))
+            try:
+                print(main(*input_data.split()))
+            except InvalidInputError as e:
+                print(e.message)
