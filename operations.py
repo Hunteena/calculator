@@ -49,7 +49,10 @@ def _to_int(a: float) -> tuple[int, int]:
     number, _, exponent = str(a).partition("e")
     if not exponent:
         integer, _, decimal = str(a).partition(".")
-        return len(decimal), int(integer + decimal)
+        if float(integer + decimal) == float('inf'):
+            raise InvalidInputError("Слишком большая величина")
+        else:
+            return len(decimal), int(integer + decimal)
     else:
         return 0, int(float(a))
 
@@ -224,11 +227,11 @@ def solve(*equation: str) -> tuple[str, float]:
     except ValueError:
         b_not_float = True
     if not (a_not_float ^ b_not_float):
-        raise InvalidInputError(f"{a} и {b} должны быть переменной и числом")
+        raise InvalidInputError(f"'{a}' и '{b}' должны быть переменной и числом")
     try:
         c = float(c)
     except ValueError:
-        raise InvalidInputError(f"{c} должно быть числом")
+        raise InvalidInputError(f"'{c}' должно быть числом")
 
     if b_not_float and oper in ["+", "*"]:
         a, b = b, a
@@ -241,10 +244,10 @@ def solve(*equation: str) -> tuple[str, float]:
         if inverse_func:
             return a, inverse_func(c, b)
         else:
-            raise InvalidInputError(f"{oper} должно быть оператором")
+            raise InvalidInputError(f"'{oper}' должно быть оператором")
     if b_not_float:
         inverse_func = {"-": sub, "/": div}.get(oper)
         if inverse_func:
             return b, inverse_func(a, c)
         else:
-            raise InvalidInputError(f"{oper} должно быть оператором")
+            raise InvalidInputError(f"'{oper}' должно быть оператором")

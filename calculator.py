@@ -1,11 +1,11 @@
 import logging
-from collections import deque
+
+import pyperclip
 
 from operations import add, sub, mul, div, mod, power, sqrt, solve, InvalidInputError
 
 LOG_FILE = 'calculator.log'
 
-# TODO Копирование в буфер обмена по клавишам ctrl+c результата вычислений
 logging.basicConfig(
     level=logging.INFO,
     format='%(message)s',
@@ -43,33 +43,43 @@ def main(*task: str) -> str:
     try:
         b = float(b)
     except ValueError:
-        raise InvalidInputError(f"{b} должно быть числом")
+        raise InvalidInputError(f"'{b}' должно быть числом")
 
     func = {"+": add, "-": sub, "*": mul, "/": div, "%": mod, "^": power}.get(oper)
     if func:
         return str(func(a, b))
     else:
-        raise InvalidInputError(f"{oper} должно быть оператором")
+        raise InvalidInputError(f"'{oper}' должно быть оператором")
 
 
 def get_log(s: str) -> None:
     try:
         n = int(s)
     except ValueError:
-        raise InvalidInputError("Укажите количество операций для вывода")
+        raise InvalidInputError("Укажите количество операций для вывода, например, 'h 5'")
     if n == 0:
-        raise InvalidInputError("Укажите количество операций для вывода")
+        raise InvalidInputError("Укажите количество операций для вывода, например, 'h 5'")
     with open(LOG_FILE) as log:
-        lines = deque(log, 2 * n)
-    for line in lines:
+        lines = log.readlines()
+    for line in lines[-2*n:]:
         print(line, end='')
 
 
 if __name__ == "__main__":
     print("Введите пример или простое уравнение, разделяя числа и операторы пробелами.\n"
           "Чтобы получить справку, просто нажмите ввод.")
+    result = ''
     while True:
-        input_data = input("Введите пример: ").strip()
+        try:
+            input_data = input("Введите пример или команду: ").strip()
+        except KeyboardInterrupt as e:
+            try:
+                pyperclip.copy(result)
+                print("Последний результат скопирован в буфер обмена.")
+            except pyperclip.PyperclipException:
+                print("Для выполнения копирования в буфер обмена на Linux необходимо установить xsel:\n"
+                      "'sudo apt-get install xsel'")
+            continue
         if input_data == "exit":
             print("Калькулятор завершил работу.")
             break

@@ -5,8 +5,8 @@ from operations import mul, div, mod, power, sqrt, INT_PRECISION, FLOAT_PRECISIO
 
 test_data = [
     (123456, 789),
-    (123456, -789),
     (-123456, 789),
+    (123456, -789),
     (-123456, -789),
     (123.456, 78.9),
     (123.456, -78.9),
@@ -63,7 +63,7 @@ def test_mod(a, b):
         assert mod(a, b) == expected_result
 
 
-@pytest.mark.parametrize('a, b', test_data)
+@pytest.mark.parametrize('a, b', test_data[2:])
 def test_power(a, b):
     a, b = float(a), float(b)
     if not b.is_integer() or a == 0 and b < 0:
@@ -82,6 +82,13 @@ def test_power(a, b):
             assert power(a, b) == float('inf')
         except ZeroDivisionError:
             assert power(a, b) == 0
+
+
+@pytest.mark.parametrize('a, b', test_data[:2])
+def test_power_too_big(a, b):
+    a, b = float(a), float(b)
+    with pytest.raises(InvalidInputError):
+        power(a, b)
 
 
 @pytest.mark.parametrize('a', [0, 4, 3.1415, -1])

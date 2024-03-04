@@ -8,6 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.9"
 pytest = "^8.0.1"
+pyperclip = "^1.8.2"
 
 
 [build-system]
